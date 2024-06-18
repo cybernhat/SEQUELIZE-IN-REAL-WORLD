@@ -10,6 +10,8 @@ const { Op } = require('sequelize');
 router.get('/', async (req, res, next) => {
     let errorResult = { errors: [], count: 0, pageCount: 0 };
 
+    const { name, limit } = req.query;
+
     // Phase 6B: Classroom Search Filters
     /*
         name filter:
@@ -36,11 +38,56 @@ router.get('/', async (req, res, next) => {
     */
     const where = {};
 
-    // Your code here
+    if (name) {
+        where.name = {
+            [Op.substring]: name
+        }
+    }
+
+    if (limit) {
+        const limits = limit.split(',');
+
+        if (limits.length === 1) {
+            if (parseInt(limits[0])) {
+                where.studentLimit = parseInt(limits[0])
+            } else {
+                errorResult.errors.push({
+                    message: 'Student Limit should be an integer'
+                });
+                res.status('400').json({
+                    errorResult
+                })
+            }
+        } else {
+            if (limits.length !== 2) {
+                errorResult.errors.push({
+                    message: 'Student Limit should be two numbers: min,max'
+                })
+                res.status('400').json({
+                    errorResult
+                })
+            } else if (limits[0] > limits[1]) {
+                errorResult.errors.push({
+                    message: 'min must be less than max'
+                })
+                res.status('400').json({
+                    errorResult
+                })
+            }
+
+            where.studentLimit = {
+                    [Op.between]: [parseInt(limits[0]), parseInt(limits[1])]
+                }
+        }
+
+    }
+
 
     const classrooms = await Classroom.findAll({
         attributes: [ 'id', 'name', 'studentLimit' ],
-        where,
+        where: {
+            ...where
+        },
         order: [['name', 'ASC']]
     });
 
