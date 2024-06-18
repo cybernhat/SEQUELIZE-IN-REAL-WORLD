@@ -72,6 +72,8 @@ router.get('/:id', async (req, res, next) => {
         res.send({ message: 'Classroom Not Found' });
     }
 
+
+
     // Phase 5: Supply and Student counts, Overloaded classroom
         // Phase 5A: Find the number of supplies the classroom has and set it as
             // a property of supplyCount on the response
@@ -88,16 +90,23 @@ router.get('/:id', async (req, res, next) => {
         }
     })
 
-    classroomObj.studentCount = await Student.count({
-        include: {
-            model: Classroom,
-            through: {
-                model: StudentClassroom,
-                where: {
-                    classroomId: classroom.id
-                }
+    classroomObj.studentCount = await StudentClassroom.count({
+        where: {
+            classroomId: classroom.id
         }
     })
+
+    classroomObj.overloaded = classroomObj.studentCount > classroomObj.studentLimit? true : false
+
+    const sum = await StudentClassroom.sum('grade', {
+        where: {
+            classroomId: classroom.id
+        }
+    })
+
+    classroomObj.avgGrade = sum / classroomObj.studentCount;
+
+
 
     res.json(classroomObj);
 });
