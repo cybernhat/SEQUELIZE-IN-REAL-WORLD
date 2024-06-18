@@ -10,7 +10,7 @@ const { Op } = require("sequelize");
 router.get('/', async (req, res, next) => {
     let errorResult = { errors: [], count: 0, pageCount: 0 };
 
-    let { page, size } = req.query;
+    let { page, size, firstName, lastName, lefty } = req.query;
 
     // Phase 2A: Use query params for page & size
     page = page === undefined? 1 : parseInt(page)
@@ -22,12 +22,12 @@ router.get('/', async (req, res, next) => {
 
     let result = {};
 
-    result.count = await Student.count();
-    result.pageCount = Math.ceil(result.count / size);
+    // result.count = await Student.count();
+    // result.pageCount = Math.ceil(result.count / size);
 
-    if (result.pageCount < page) {
-     errorResult.count = result.count
-    }
+    // if (result.pageCount < page) {
+    //  errorResult.count = result.count
+    // }
 
     if (size > 0 && page > 0) {
         pagination.limit = size;
@@ -77,8 +77,26 @@ router.get('/', async (req, res, next) => {
         */
        const where = {};
 
-       // Your code here
+       if (firstName) {
+            where.firstName= {
+                [Op.like]: `%${firstName}%`
+            }
+       }
 
+       if (lastName) {
+        where.lastName = {
+            [Op.substring]: lastName
+        }
+       }
+
+       if (lefty === 'true') {
+        where.leftHanded = true
+       } else if (lefty === 'false') {
+        where.leftHanded = false
+       } else if (lefty !== undefined) {
+        errorResult.errors.push({message: 'lefty must be true or false'})
+        res.status(400).json(errorResult)
+       }
 
     // Phase 3C: Include total student count in the response even if params were
         // invalid
@@ -101,10 +119,13 @@ router.get('/', async (req, res, next) => {
 
                    // limits and offsets as a property of count on the result
                    // Note: This should be a new query
+                    result.count = await Student.count({where: {...where}})
+
+                    result.pageCount = Math.ceil(result.count / size);
 
                    result.rows = await Student.findAll({
                        attributes: ['id', 'firstName', 'lastName', 'leftHanded'],
-                       where,
+                       where: {...where},
                        order: [['lastName', 'ASC'], ['firstName', 'ASC']],
                        ...pagination
                     });
