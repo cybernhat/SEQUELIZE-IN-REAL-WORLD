@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import model(s)
-const { Classroom } = require('../db/models');
+const { Classroom, Supply, Student, StudentClassroom } = require('../db/models');
 const { Op } = require('sequelize');
 
 // List of classrooms
@@ -58,6 +58,13 @@ router.get('/:id', async (req, res, next) => {
                 // then firstName (both in ascending order)
                 // (Optional): No need to include the StudentClassrooms
         // Your code here
+        include: {
+            model: Student,
+            attributes: [],
+            through: "StudentClassroom"
+        }
+
+
     });
 
     if (!classroom) {
@@ -74,9 +81,25 @@ router.get('/:id', async (req, res, next) => {
             // studentLimit of the classroom to the number of students in the
             // classroom
         // Optional Phase 5D: Calculate the average grade of the classroom
-    // Your code here
+    const classroomObj = classroom.toJSON();
+    classroomObj.supplyCount = await Supply.count({
+        where: {
+            classroomId: classroomObj.id
+        }
+    })
 
-    res.json(classroom);
+    classroomObj.studentCount = await Student.count({
+        include: {
+            model: Classroom,
+            through: {
+                model: StudentClassroom,
+                where: {
+                    classroomId: classroom.id
+                }
+        }
+    })
+
+    res.json(classroomObj);
 });
 
 // Export class - DO NOT MODIFY
