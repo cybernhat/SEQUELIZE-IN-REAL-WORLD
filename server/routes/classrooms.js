@@ -105,22 +105,6 @@ router.get('/:id', async (req, res, next) => {
                 // then firstName (both in ascending order)
                 // (Optional): No need to include the StudentClassrooms
         // Your code here
-        // include: {
-        //     model: Student,
-        //     attributes: [
-        //         'id',
-        //         'firstName',
-        //         'lastName',
-        //         'leftHanded'
-        //     ],
-        //     order: [['lastName', 'ASC'], ['firstName', 'ASC']],
-        //     through: {
-        //         model: StudentClassroom,
-        //         attributes: []
-        //     }
-        // }
-
-
     });
 
     if (!classroom) {
@@ -146,7 +130,7 @@ router.get('/:id', async (req, res, next) => {
             classroomId: classroom.id
         }
     })
-    
+
     classroomObj.supplyCount = await classroom.countSupplies();
     classroomObj.studentCount = await classroom.countStudents();
     classroomObj.overloaded = classroomObj.studentCount > classroomObj.studentLimit? true : false
@@ -169,7 +153,6 @@ router.get('/:id', async (req, res, next) => {
             }
         }
     })
-
 
     classroomObj.supplies = await classroom.getSupplies({
         attributes: [
