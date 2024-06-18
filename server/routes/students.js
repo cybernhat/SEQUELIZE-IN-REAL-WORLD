@@ -20,11 +20,19 @@ router.get('/', async (req, res, next) => {
 
     const pagination = {};
 
+    let result = {};
+
+    result.count = await Student.count();
+    result.pageCount = Math.ceil(result.count / size);
+
+    if (result.pageCount < page) {
+     errorResult.count = result.count
+    }
 
     if (size > 0 && page > 0) {
         pagination.limit = size;
         pagination.offset = size * (page - 1);
-    } else if (page < 0 && size < 0) {
+    } else if (page < 0 || size < 0) {
         // Phase 2B: Add an error message to errorResult.errors of
         errorResult.errors.push(
             {
@@ -88,10 +96,8 @@ router.get('/', async (req, res, next) => {
                     */
                    // Your code here
 
-                   let result = {};
 
                    // Phase 3A: Include total number of results returned from the query without
-                   result.count = await Student.count();
 
                    // limits and offsets as a property of count on the result
                    // Note: This should be a new query
@@ -116,7 +122,7 @@ router.get('/', async (req, res, next) => {
 
 
                        // Phase 3B:
-                    result.pageCount = Math.ceil(result.count / size);
+
                        // Include the total number of available pages for this query as a key
                        // of pageCount in the response data
                        // In the special case (page=0, size=0) that returns all students, set
@@ -137,9 +143,6 @@ router.get('/', async (req, res, next) => {
                }
                result.size = size;
 
-            //    if (result.pageCount < page) {
-            //     errorResult.count = result.count
-            //    }
     // Your code here
 
     res.json(result);
