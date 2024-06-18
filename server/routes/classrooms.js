@@ -105,11 +105,20 @@ router.get('/:id', async (req, res, next) => {
                 // then firstName (both in ascending order)
                 // (Optional): No need to include the StudentClassrooms
         // Your code here
-        include: {
-            model: Student,
-            attributes: [],
-            through: "StudentClassroom"
-        }
+        // include: {
+        //     model: Student,
+        //     attributes: [
+        //         'id',
+        //         'firstName',
+        //         'lastName',
+        //         'leftHanded'
+        //     ],
+        //     order: [['lastName', 'ASC'], ['firstName', 'ASC']],
+        //     through: {
+        //         model: StudentClassroom,
+        //         attributes: []
+        //     }
+        // }
 
 
     });
@@ -131,29 +140,46 @@ router.get('/:id', async (req, res, next) => {
             // classroom
         // Optional Phase 5D: Calculate the average grade of the classroom
     const classroomObj = classroom.toJSON();
-    classroomObj.supplyCount = await Supply.count({
-        where: {
-            classroomId: classroomObj.id
-        }
-    })
-
-    classroomObj.studentCount = await StudentClassroom.count({
-        where: {
-            classroomId: classroom.id
-        }
-    })
-
-    classroomObj.overloaded = classroomObj.studentCount > classroomObj.studentLimit? true : false
 
     const sum = await StudentClassroom.sum('grade', {
         where: {
             classroomId: classroom.id
         }
     })
-
+    
+    classroomObj.supplyCount = await classroom.countSupplies();
+    classroomObj.studentCount = await classroom.countStudents();
+    classroomObj.overloaded = classroomObj.studentCount > classroomObj.studentLimit? true : false
     classroomObj.avgGrade = sum / classroomObj.studentCount;
 
+    classroomObj.students = await Classroom.findByPk(req.params.id, {
+        attributes: [],
+        include: {
+            model: Student,
+            attributes: [
+                'id',
+                'firstName',
+                'lastName',
+                'leftHanded'
+            ],
+            order: [['lastName', 'ASC'], ['firstName', 'ASC']],
+            through: {
+                model: StudentClassroom,
+                attributes: []
+            }
+        }
+    })
 
+
+    classroomObj.supplies = await classroom.getSupplies({
+        attributes: [
+            'id',
+            'name',
+            'category',
+            'handed'
+        ],
+        order: [['category', 'ASC'], ['name', 'ASC']]
+    })
 
     res.json(classroomObj);
 });
